@@ -69,6 +69,30 @@ class App:
             current_text = text
         self.main_label.setText(current_text)
     
+    def load_recording(self, item):
+        """
+        Load the contents of the clicked recording into the main label.
+        """
+        # Build the full path
+        if self.paused:
+            return
+
+        file_path = self.root_dir / item.text()
+        
+        if file_path.exists() and file_path.is_file():
+            text = file_path.read_text(encoding="utf-8")
+            self.main_label.setText(text)
+        else:
+            self.main_label.setText("Error: File not found")
+        
+        self.start_button.setHidden(True)
+        self.stop_button.setHidden(True)
+    
+    def on_record_button_click(self):
+        self.start_button.setHidden(False)
+        self.stop_button.setHidden(False)
+        self.main_label.setText("")
+    
     def create_layout(self):
         self.window = QWidget()
         self.window.setWindowTitle("Top/Bottom Layout Example")
@@ -87,10 +111,45 @@ class App:
         self.side_list.setFixedWidth(260)
         # Placeholder items (will be populated in real use)
         self.side_list.addItems(self._get_recording_files())
+        self.side_list.itemClicked.connect(self.load_recording)
         self.side_panel.addWidget(side_header)
         self.side_panel.addWidget(self.side_list)
+        
+        # Add spacer and a bottom-aligned "Record" button in the side panel
+        self.side_panel.addStretch()
+        self.side_record_button = QPushButton("Record")
+        self.side_record_button.setObjectName("side_record_button")
+        # Make the button visually slightly inset compared to the list width
+        self.side_record_button.setMaximumWidth(220)
+        self.side_panel.addWidget(self.side_record_button, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
+        self.side_record_button.clicked.connect(self.on_record_button_click)
+        
+        self._create_record_panel()
 
-        # --- Center panel (current main content + buttons) ---
+        # Add side panel and center panel to main layout
+        self.main_layout.addLayout(self.side_panel)
+        self.main_layout.addLayout(self.center_panel)
+
+        # Apply a simple, mac-like color scheme
+        self.window.setStyleSheet("""
+        /* Dark theme inspired by macOS Dark Mode */
+        QWidget { background-color: #0B0B0C; color: #E6E6E6; }
+        QLabel#main_label { background-color: #141416; border-radius: 8px; padding: 12px; color: #E6E6E6; }
+        QLabel { color: #E6E6E6; }
+        QListWidget { background-color: #1C1C1E; border-radius: 8px; padding: 6px; color: #E6E6E6; }
+        QListWidget::item:selected { background-color: #2C2C2F; color: #FFFFFF; }
+        QPushButton { background-color: #0A84FF; color: white; border: none; padding: 6px 12px; border-radius: 8px; }
+        QPushButton#stop_button { background-color: #FF453A; }
+        QPushButton#pause_button { background-color: #FF9F0A; color: #1C1C1E; }
+        QPushButton:disabled { background-color: #2C2C2E; color: #6E6E73; }
+        QPushButton#side_record_button { background-color: #30D158; color: #FFFFFF; border: none; padding: 6px 12px; border-radius: 10px; }
+        """)
+
+        # Set the layout for the window
+        self.window.setLayout(self.main_layout)
+    
+    def _create_record_panel(self):
+         # --- Center panel (current main content + buttons) ---
         self.center_panel = QVBoxLayout()
         self.main_label = QLabel("")
         self.main_label.setObjectName("main_label")
@@ -132,27 +191,7 @@ class App:
 
         # Add bottom container to center panel
         self.center_panel.addLayout(self.bottom_container)
-
-        # Add side panel and center panel to main layout
-        self.main_layout.addLayout(self.side_panel)
-        self.main_layout.addLayout(self.center_panel)
-
-        # Apply a simple, mac-like color scheme
-        self.window.setStyleSheet("""
-        /* Dark theme inspired by macOS Dark Mode */
-        QWidget { background-color: #0B0B0C; color: #E6E6E6; }
-        QLabel#main_label { background-color: #141416; border-radius: 8px; padding: 12px; color: #E6E6E6; }
-        QLabel { color: #E6E6E6; }
-        QListWidget { background-color: #1C1C1E; border-radius: 8px; padding: 6px; color: #E6E6E6; }
-        QListWidget::item:selected { background-color: #2C2C2F; color: #FFFFFF; }
-        QPushButton { background-color: #0A84FF; color: white; border: none; padding: 6px 12px; border-radius: 8px; }
-        QPushButton#stop_button { background-color: #FF453A; }
-        QPushButton#pause_button { background-color: #FF9F0A; color: #1C1C1E; }
-        QPushButton:disabled { background-color: #2C2C2E; color: #6E6E73; }
-        """)
-
-        # Set the layout for the window
-        self.window.setLayout(self.main_layout)
+        return self.center_panel
     
     def run(self):
         # Show the window

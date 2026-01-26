@@ -79,10 +79,17 @@ class Recorder:
             blocksize=1920,
             callback=audio_callback,
         ):
+            self.audio_tokenizer.reset()
             first_token = True
+            reset_interval = 1000
+            step_count = 0
             while self.is_recording:
                 block = block_queue.get()
                 block = block[None, :, 0]
+
+                if step_count > 0 and step_count % reset_interval == 0:
+                    self.audio_tokenizer.reset()
+                
                 other_audio_tokens = self.audio_tokenizer.encode_step(block[None, 0:1])
                 other_audio_tokens = mx.array(other_audio_tokens).transpose(0, 2, 1)[
                     :, :, :self.other_codebooks
@@ -92,12 +99,13 @@ class Recorder:
                 audio_tokens = gen.last_audio_tokens()
                 _text = None
                 if text_token not in (0, 3):
-                    _text = self.text_tokenizer.id_to_piece(text_token)  # type: ignore
+                    _text = self.text_tokenizer.id_to_piece(text_token)
                     _text = _text.replace("▁", " ")
                     if first_token:
-                        _text.strip()
+                        _text = _text.strip()
                         first_token = False
                     callback(_text)
+                step_count += 1
 
     def stop_recording(self):
         self.is_recording = False

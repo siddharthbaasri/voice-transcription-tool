@@ -1,7 +1,7 @@
 import sys
 import threading
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QListWidgetItem, QPushButton
-from PyQt6.QtWidgets import QLabel, QListWidget, QSizePolicy, QMenu, QMessageBox, QInputDialog, QStyle
+from PyQt6.QtWidgets import QLabel, QListWidget, QSizePolicy, QMenu, QMessageBox, QInputDialog, QStyle, QScrollArea
 from PyQt6.QtCore import Qt, QSize
 from record import Recorder
 from pathlib import Path
@@ -217,7 +217,7 @@ class App:
         # Main horizontal layout: side panel + center panel
         self.main_layout = QHBoxLayout()
 
-        # --- Side panel (similar width to mac Voice Memos list) ---
+        #Side Panel
         self.side_panel = QVBoxLayout()
         side_header = QLabel("Recordings")
         side_header.setStyleSheet("font-weight: 600; padding: 6px 8px; color: #1C1C1E;")
@@ -276,8 +276,19 @@ class App:
         self.window.setLayout(self.main_layout)
     
     def _create_record_panel(self):
-         # --- Center panel (current main content + buttons) ---
+        #Center panel
         self.center_panel = QVBoxLayout()
+
+        # Create a scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+        """)
+
         self.main_label = QLabel("")
         self.main_label.setObjectName("main_label")
         self.main_label.setWordWrap(True)
@@ -285,7 +296,10 @@ class App:
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.main_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.main_label.setMinimumSize(400, 300)
-        self.center_panel.addWidget(self.main_label)
+
+        scroll_area.setWidget(self.main_label)
+
+        self.center_panel.addWidget(scroll_area)
 
         # Bottom container (buttons side by side)
         self.bottom_container = QHBoxLayout()
